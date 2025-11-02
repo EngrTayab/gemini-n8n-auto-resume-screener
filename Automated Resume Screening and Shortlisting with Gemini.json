@@ -1,0 +1,719 @@
+{
+  "name": "Automated Resume Screening and Shortlisting with Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "jobTitle",
+              "value": "Senior Software Engineer",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "requiredSkills",
+              "value": "Python,DSA,Web development,Machine Learning ,AI AUtomation,APP development",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "minimumExperience",
+              "value": "1 year ,6 month",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "qualificationThreshold",
+              "value": 70,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "e87b52bc-1448-4b65-b298-afeeeb5a1c12",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        11088,
+        4608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume",
+        "options": {}
+      },
+      "id": "cedc17a7-26b6-492a-9643-8f5c3e556f14",
+      "name": "Extract Resume Content",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        11088,
+        4800
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-pro-latest",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "6afd2f94-a8ee-401c-8926-a4e2f542361c",
+      "name": "Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        11840,
+        5136
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zvd1CUiI8eOMIm29",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"candidateName\": {\n      \"type\": \"string\"\n    },\n    \"email\": {\n      \"type\": \"string\"\n    },\n    \"phone\": {\n      \"type\": \"string\"\n    },\n    \"totalExperience\": {\n      \"type\": \"number\"\n    },\n    \"skills\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"education\": {\n      \"type\": \"string\"\n    },\n    \"qualificationScore\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 100\n    },\n    \"strengths\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"weaknesses\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"recommendation\": {\n      \"type\": \"string\"\n    }\n  }\n}",
+        "autoFix": true
+      },
+      "id": "f369c7e7-b9ae-4059-a9d4-23df935e5375",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        11840,
+        4928
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.output.qualificationScore }}",
+              "rightValue": "={{ $('Workflow Configuration').first().json.qualificationThreshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d07c6d73-3afb-44da-a529-b593b4f56e32",
+      "name": "Check Qualification Score",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        12208,
+        4704
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1g0U5i7DL7y3wV4z2tpzrvTZEqhrLxsczMlwp5GBdfDA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Rejected",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "A": "={{ $('AI Resume Analyzer').item.json.output.candidateName }}",
+            "B": "={{ $('AI Resume Analyzer').item.json.output.email }}",
+            "C": "={{ $('AI Resume Analyzer').item.json.output.phone }}",
+            "D": "={{ $('AI Resume Analyzer').item.json.output.totalExperience }}",
+            "E": "={{ $('AI Resume Analyzer').item.json.output.skills }}",
+            "F": "={{ $('AI Resume Analyzer').item.json.output.strengths }}",
+            "G": "={{ $('AI Resume Analyzer').item.json.output.weaknesses }}",
+            "H": "={{ $('AI Resume Analyzer').item.json.output.recommendation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "A",
+              "displayName": "A",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "B",
+              "displayName": "B",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "C",
+              "displayName": "C",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "D",
+              "displayName": "D",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "E",
+              "displayName": "E",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "F",
+              "displayName": "F",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "G",
+              "displayName": "G",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "H",
+              "displayName": "H",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "I",
+              "displayName": "I",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "fa62bf7d-b0f5-4e23-94ae-4aa6e58599f0",
+      "name": "Add to Shortlisted Candidates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        12432,
+        4608
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "72Psx6JXVfTTRjS5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1g0U5i7DL7y3wV4z2tpzrvTZEqhrLxsczMlwp5GBdfDA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Rejected",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "A": "={{ $json.output.candidateName }}",
+            "B": "={{ $json.output.email }}",
+            "C": "={{ $json.output.phone }}",
+            "D": "={{ $json.output.totalExperience }}",
+            "E": "={{ $json.output.skills.join(', ') }}",
+            "F": "={{ $json.output.strengths.join('; ') }}",
+            "G": "={{ $json.output.weaknesses.join('; ') }}",
+            "H": "={{ $json.output.recommendation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "A",
+              "displayName": "A",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "B",
+              "displayName": "B",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "C",
+              "displayName": "C",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "D",
+              "displayName": "D",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "E",
+              "displayName": "E",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "F",
+              "displayName": "F",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "G",
+              "displayName": "G",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "H",
+              "displayName": "H",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "I",
+              "displayName": "I",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6b02b628-6cf6-4b7b-8ce8-2b0d73c6d4d5",
+      "name": "Add to Rejected Candidates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        12432,
+        4800
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "72Psx6JXVfTTRjS5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Resume Screening Application",
+        "formDescription": "Upload your resume for automated screening and evaluation",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resume",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf, .docx, .doc",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone Number"
+            }
+          ]
+        },
+        "options": {
+          "buttonLabel": "Submit Resume for Screening",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thank you! Your resume has been submitted and is being analyzed. You will receive feedback shortly."
+            }
+          }
+        }
+      },
+      "id": "c9bab6f8-06a6-4c1d-9364-dfa55d2a33dd",
+      "name": "Resume Upload Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        10864,
+        4704
+      ],
+      "webhookId": "de46fc54-f0b6-43e4-815c-28a0cdb886f1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert HR recruiter analyzing resumes. Analyze the provided resume for the position of {{ $json.jobTitle }}.\n\nCandidate Contact Information (USE THESE EXACT VALUES):\n- Full Name:{{ $('Resume Upload Form').item.json['Full Name'] }}\n- Email:{{ $('Resume Upload Form').item.json['Email Address'] }}\n- Phone:{{ $('Resume Upload Form').item.json['Phone Number'] }}\n\nJob Requirements:\n- Required Skills: {{ $json.requiredSkills }}\n- Minimum Experience: {{ $json.minimumExperience }}\n\nResume Content to Analyze:\n{{ $json.text }}\n\nCRITICAL INSTRUCTION: In your JSON output, you MUST use these EXACT values:\n- candidateName:{{ $('Resume Upload Form').item.json['Full Name'] }}\n- email:{{ $('Resume Upload Form').item.json['Email Address'] }}\n- phone:{{ $('Resume Upload Form').item.json['Phone Number'] }}\nDo NOT extract different contact information from the resume text. Use the values provided above exactly as they are.\n\nProvide a comprehensive analysis:\n1. Set candidateName, email, and phone to the EXACT values shown above\n2. Calculate total years of professional experience from the resume content\n3. List all technical and soft skills found in the resume\n4. Summarize education background\n5. Assign a qualification score (0-100) based on:\n   - Skills match with required skills (40%)\n   - Years of experience vs requirement (30%)\n   - Education relevance (20%)\n   - Overall presentation and achievements (10%)\n6. List key strengths for this role\n7. List potential weaknesses or gaps\n8. Provide a hiring recommendation (Strongly Recommend, Recommend, Consider, or Reject)\n\nBe objective and thorough in your assessment.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "id": "acc7b915-0d35-4859-9ff2-4384edc5be11",
+      "name": "AI Resume Analyzer",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        11760,
+        4704
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        11536,
+        4704
+      ],
+      "id": "d85d76ce-fe56-430f-a0c9-c2b484c9d10b",
+      "name": "Wait",
+      "webhookId": "b5be96b3-f1b9-40f9-bbe2-a7cdf571476c"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.B }}",
+        "subject": "=Update on Your Application for the {{ $('Merge Configuration with Resume Data').item.json.jobTitle }}",
+        "message": "=Hi {{ $('Merge Configuration with Resume Data').item.json['Full Name'] }},\n\nThank you for applying for the {{ $('Merge Configuration with Resume Data').item.json.jobTitle }} position. After careful review, we have decided not to move forward with your application at this time.\n\nWhile you demonstrated strengths in {{ $('AI Resume Analyzer').item.json.output.strengths[0] }}, the role required deeper experience in {{ $('Merge Configuration with Resume Data').item.json.requiredSkills }}.\n\nWe encourage you to continue developing your skills, particularly in {{ $('AI Resume Analyzer').item.json.output.weaknesses[0] }}.\n\nThank you for your interest and we wish you the best in your job search.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        12656,
+        4800
+      ],
+      "id": "a4457db9-eb73-47f6-9f5f-9606dec7c32e",
+      "name": "Send a message",
+      "webhookId": "02f09977-bd52-42a4-816d-c79b9bcb86ac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KGyhlN6l6bjjVmeo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "jobTitle",
+              "value": "={{ $('Workflow Configuration').first().json.jobTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "requiredSkills",
+              "value": "={{ $('Workflow Configuration').first().json.requiredSkills }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "minimumExperience",
+              "value": "={{ $('Workflow Configuration').first().json.minimumExperience }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "65b132be-19ab-41b7-ac3a-7a007ffb22ab",
+      "name": "Merge Configuration with Resume Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        11312,
+        4704
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Check Qualification Score').item.json.output.email }}",
+        "subject": "=Congratulations! Next Steps for {{ $('Merge Configuration with Resume Data').item.json.jobTitle }} Position",
+        "message": "=Hi {{ $('Merge Configuration with Resume Data').item.json['Full Name'] }},\n\nGreat news! After reviewing your application for the {{ $('Merge Configuration with Resume Data').item.json.jobTitle }} position, we are impressed with your qualifications and would like to move forward with your candidacy.\n\nYour strengths in {{ $('AI Resume Analyzer').item.json.output.strengths[0] }} particularly stood out, and your experience with {{ $('Merge Configuration with Resume Data').item.json.requiredSkills }} aligns well with our requirements.\n\nOur HR team will contact you within the next 2-3 business days to schedule an interview.\n\nBest regards,\nHR Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        12656,
+        4608
+      ],
+      "id": "fcc711c6-ff15-45a1-a754-9cb5c51f57f1",
+      "name": "Send a message1",
+      "webhookId": "8c84b056-fec3-490c-bf2f-14614daaa5c7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "KGyhlN6l6bjjVmeo",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Resume Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Qualification Score": {
+      "main": [
+        [
+          {
+            "node": "Add to Shortlisted Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add to Rejected Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Upload Form": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Resume Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Resume Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Resume Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Check Qualification Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "AI Resume Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Rejected Candidates": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Merge Configuration with Resume Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Resume Content": {
+      "main": [
+        [
+          {
+            "node": "Merge Configuration with Resume Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Configuration with Resume Data": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Shortlisted Candidates": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ebd1a62f-7b42-4097-b1a1-78625aac6dd0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d2629b900d4e3143ea50de126de7279259a6f4e5eb6c8f1c7a374ba5d06bd338"
+  },
+  "id": "JumTpvvJ8m5Wd1LO",
+  "tags": []
+}
